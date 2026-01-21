@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Gestor Viking</title>
+    <link rel="manifest" href="manifest.json">
+    <link rel="stylesheet" href="style.css">
+    <script>
+        window.onerror = function (msg, url, line) {
+            alert("ERRO: " + msg + "\nLinha: " + line);
+            return false;
+        };
+    </script>
+    <meta name="theme-color" content="#0f172a">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+</head>
+
+<body>
+    <!-- Login Modal (Overlay) -->
+    <div id="login-modal" class="login-overlay">
+        <div class="login-card">
+            <h1 style="text-align:center; font-size:1.5rem; margin-bottom:20px;" id="login-title">Acessar Sistema</h1>
+
+            <form id="login-form">
+                <input type="checkbox" id="is-register" style="display:none;">
+                <div class="input-group">
+                    <label>Email</label>
+                    <input type="email" id="email" placeholder="seu@email.com" required>
+                </div>
+                <div class="input-group">
+                    <label>Senha</label>
+                    <input type="password" id="password" placeholder="******" required minlength="6">
+                </div>
+
+                <p id="login-error" style="color:var(--danger); font-size:0.9rem; display:none; margin-bottom:10px;">
+                </p>
+
+                <button type="button" id="btn-login-submit" onclick="handleLogin()" class="btn-primary">ENTRAR</button>
+            </form>
+
+            <div style="margin-top:20px; text-align:center;">
+                <button id="btn-toggle-mode" onclick="toggleAuthMode()" type="button"
+                    style="background:none; border:none; color:var(--primary); font-weight:600; cursor:pointer;">
+                    Não tem conta? Crie agora
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- App Container -->
+    <div id="app" class="container blurred">
+        <!-- Header -->
+        <header class="header">
+            <div id="user-display">
+                <!-- Auth JS will populate this -->
+                <p style="font-size:0.8rem; color:var(--text-muted); font-weight:600;">Carregando...</p>
+            </div>
+            <button id="theme-toggle" class="icon-btn" aria-label="Alternar Tema">
+                <!-- Moon Icon -->
+                <svg id="moon-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"
+                    fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+                </svg>
+            </button>
+        </header>
+
+        <!-- Main Form -->
+        <main id="form-view" class="view active">
+            <form id="entry-form">
+                <!-- Data e Hora (Auto) -->
+                <div class="row">
+                    <div class="input-group">
+                        <label>Data Início</label>
+                        <input type="date" id="data_inicio" required readonly>
+                    </div>
+                    <div class="input-group">
+                        <label>Hora Início</label>
+                        <input type="time" id="hora_inicio" required readonly>
+                    </div>
+                </div>
+
+                <!-- Empresa -->
+                <div class="input-group">
+                    <label>Empresa Solicitante</label>
+                    <input type="text" id="empresa" list="empresas-list" placeholder="Selecione ou digite..."
+                        autocomplete="off">
+                    <datalist id="empresas-list">
+                        <option value="OnSystem">
+                        <option value="RVS">
+                        <option value="C&C">
+                        <option value="Sancor">
+                        <option value="Carsystem">
+                    </datalist>
+                </div>
+
+                <!-- Pagamento (Radio Cards) -->
+                <div class="input-group">
+                    <label>Status do Pagamento</label>
+                    <div class="radio-cards">
+                        <label class="radio-card">
+                            <input type="radio" name="pagamento" value="PAGO">
+                            <span>PAGO</span>
+                        </label>
+                        <label class="radio-card">
+                            <input type="radio" name="pagamento" value="PRAZO">
+                            <span>PRAZO</span>
+                        </label>
+                        <label class="radio-card">
+                            <input type="radio" name="pagamento" value="NÃO PAGO" checked>
+                            <span>NÃO PAGO</span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Tipo (Select Chips) -->
+                <div class="input-group">
+                    <label>Tipo de Acionamento</label>
+                    <div class="chips-container" id="tipo-chips">
+                        <!-- JS vai popular isso -->
+                    </div>
+                    <input type="hidden" id="tipo_acionamento" value="ROUBO/FURTO">
+                </div>
+
+                <!-- Placa e Modelo -->
+                <div class="row">
+                    <div class="input-group">
+                        <label>Placa</label>
+                        <input type="text" id="placa" placeholder="ABC-1234" autocapitalize="characters" maxlength="8">
+                    </div>
+                    <div class="input-group">
+                        <label>Modelo do Veículo</label>
+                        <input type="text" id="modelo" placeholder="Ex: Gol Prata">
+                    </div>
+                </div>
+
+                <!-- Custos e Obs (Opcional) -->
+                <div class="input-group">
+                    <details>
+                        <summary
+                            style="color:var(--primary); font-weight:600; cursor:pointer; padding:10px 0; font-size:0.9rem; display:flex; align-items:center; gap:8px;">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+                                fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                stroke-linejoin="round">
+                                <line x1="12" y1="5" x2="12" y2="19"></line>
+                                <line x1="5" y1="12" x2="19" y2="12"></line>
+                            </svg>
+                            Adicionar Custos & Observações
+                        </summary>
+                        <div style="margin-top:16px; padding-left:4px;">
+                            <div class="input-group">
+                                <label>Custos Extras (Pedágio, etc)</label>
+                                <div style="position:relative;">
+                                    <span
+                                        style="position:absolute; left:16px; top:14px; color:var(--text-muted);">R$</span>
+                                    <input type="number" id="custos" step="0.01" style="padding-left:40px;"
+                                        placeholder="0,00" value="">
+                                </div>
+                            </div>
+                            <div class="input-group">
+                                <label>Observações Detalhadas</label>
+                                <textarea id="obs" rows="3"
+                                    placeholder="Informações relevantes sobre o serviço..."></textarea>
+                            </div>
+                        </div>
+                    </details>
+                </div>
+
+                <!-- Botão Gigante -->
+                <button type="submit" class="btn-primary">
+                    INICIAR SERVIÇO
+                </button>
+            </form>
+        </main>
+
+        <!-- Active Jobs View (Hidden by default) -->
+        <div id="active-jobs-view" class="view" style="display:none;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+                <h2>Em Andamento</h2>
+                <!-- Loader placeholder logic could go here -->
+            </div>
+            <div id="jobs-list">
+                <!-- JS Populates this -->
+                <div style="text-align:center; padding:40px; color:var(--text-muted);">
+                    Carregando serviços...
+                </div>
+            </div>
+            <button id="btn-back-home" class="btn-secondary">Voltar para Início</button>
+        </div>
+
+        <!-- History View -->
+        <div id="history-view" class="view" style="display:none;">
+            <h2>Histórico Finalizado</h2>
+            <div id="history-list">
+                <!-- JS Populates this -->
+            </div>
+        </div>
+
+        <!-- Navigation Bar -->
+        <nav class="bottom-nav">
+            <button class="nav-item active" data-target="form-view">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                    stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M12 5v14M5 12h14" />
+                </svg>
+                <span>Novo</span>
+            </button>
+            <button class="nav-item" data-target="active-jobs-view">
+                <div style="position:relative;">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                        stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                        <polyline points="14 2 14 8 20 8"></polyline>
+                        <line x1="16" y1="13" x2="8" y2="13"></line>
+                        <line x1="16" y1="17" x2="8" y2="17"></line>
+                        <polyline points="10 9 9 9 8 9"></polyline>
+                    </svg>
+                    <span id="badge-count" class="badge" style="display:none;">0</span>
+                </div>
+                <span>Ativos</span>
+            </button>
+            <button class="nav-item" data-target="history-view">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                    stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="20 6 9 17 4 12"></polyline>
+                </svg>
+                <span>Histórico</span>
+            </button>
+        </nav>
+    </div>
+
+    <!-- Firebase SDKs (Modular) -->
+    <!-- We will use ES Modules in app.js, so no need for script tags here if we use type="module" -->
+    <!-- But to keep it simple without a bundler, we can use the Compat libraries or just Import Maps. -->
+
+    <!-- UI Logic (Non-Module) for Immediate Availability -->
+    <script>
+        window.toggleAuthMode = function () {
+            const isRegInput = document.getElementById('is-register');
+            const btn = document.getElementById('btn-toggle-mode');
+            const submitBtn = document.getElementById('btn-login-submit');
+            const title = document.getElementById('login-title');
+
+            isRegInput.checked = !isRegInput.checked;
+
+            if (isRegInput.checked) {
+                title.textContent = "Criar Nova Conta";
+                submitBtn.textContent = "CRIAR CONTA";
+                btn.textContent = "Já tem conta? Clique aqui";
+                submitBtn.style.background = "var(--success)";
+            } else {
+                title.textContent = "Acessar Sistema";
+                submitBtn.textContent = "ENTRAR";
+                btn.textContent = "Não tem conta? Crie agora";
+                submitBtn.style.background = "";
+            }
+        };
+
+        // Stub to prevent ReferenceError before module loads
+        window.handleLogin = function () {
+            alert("O sistema ainda está carregando... Aguarde um instante e tente novamente.");
+        }
+    </script>
+
+    <!-- Firebase Compat SDKs (Required for file:// execution) -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+
+    <!-- Config (Runs immediately) -->
+    <script src="firebase-config.js"></script>
+
+    <!-- Auth Logic (Globals) -->
+    <script>
+        // Override stub
+        window.handleLogin = async function () {
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const isRegister = document.getElementById('is-register').checked;
+            const errorMsg = document.getElementById('login-error');
+            const btn = document.getElementById('btn-login-submit');
+
+            if (!email || !password) {
+                alert("Por favor, preencha email e senha.");
+                return;
+            }
+
+            errorMsg.style.display = 'none';
+            btn.disabled = true;
+            const originalText = btn.textContent;
+            btn.textContent = "Processando...";
+
+            try {
+                if (isRegister) {
+                    const userCredential = await auth.createUserWithEmailAndPassword(email, password);
+                    await userCredential.user.updateProfile({
+                        displayName: email.split('@')[0]
+                    });
+                    alert("Conta criada com sucesso!");
+                    window.location.reload();
+                } else {
+                    await auth.signInWithEmailAndPassword(email, password);
+                }
+            } catch (error) {
+                console.error(error);
+                let msg = "Erro desconhecido.";
+                if (error.code === 'auth/wrong-password') msg = "Senha incorreta.";
+                else if (error.code === 'auth/user-not-found') msg = "Email não cadastrado.";
+                else if (error.code === 'auth/email-already-in-use') msg = "Email já existe.";
+                else if (error.code === 'auth/weak-password') msg = "Senha fraca (min 6 caracteres).";
+                else if (error.code === 'auth/invalid-email') msg = "Email inválido.";
+
+                errorMsg.textContent = msg;
+                errorMsg.style.display = 'block';
+                btn.disabled = false;
+                btn.textContent = originalText;
+            }
+        };
+    </script>
+
+    <!-- App Logic (Globals) -->
+    <script src="app.js"></script>
+
+    <!-- Service Worker -->
+    <script>
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('./sw.js');
+        }
+    </script>
+</body>
+
+</html>
